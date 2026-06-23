@@ -53,6 +53,15 @@ def get_project(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Project not found")
     return project
 
+@router.delete("/projects/{project_id}")
+def delete_project(project_id: int, db: Session = Depends(get_db)):
+    project = service.get_project(db, project_id)
+    if not project:
+        raise HTTPException(404, "Project not found")
+    db.delete(project)
+    db.commit()
+    return {"status": "success", "message": "Project deleted"}
+
 # ─── Ideas (for a project) ───
 @router.get("/projects/{project_id}/ideas", response_model=list[IdeaCard])
 def list_project_ideas(project_id: int, db: Session = Depends(get_db)):

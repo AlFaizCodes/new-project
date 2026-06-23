@@ -198,6 +198,12 @@ export const userApi = {
   getProfile: () => api<UserResponse>("/api/user/profile"),
   createOrUpdateProfile: (profile: UserProfile) =>
     api<UserResponse>("/api/user/profile", { method: "POST", body: profile }),
+  patchProfile: (updates: Record<string, unknown>) =>
+    api<UserResponse>("/api/user/profile", { method: "PATCH", body: updates }),
+  listProjects: () =>
+    api<{ projects: Record<string, unknown>[]; total: number }>("/api/user/projects"),
+  getStats: () =>
+    api<{ projects_total: number; ideas_total: number; avg_score: number; selection_rate: number }>("/api/user/stats"),
 };
 
 export const generatorApi = {

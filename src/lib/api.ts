@@ -263,6 +263,38 @@ export const exportApi = {
     api<string>(`/api/export/mockup/${ideaId}/html`),
 };
 
+export const mockupApi = {
+  generate: (ideaId: number, projectId: number, styleVariant = "MODERN", screenType = "landing") =>
+    api<{ status: string; data: { html: string; style_variant: string; screen_type: string; components: Record<string, boolean> } }>(
+      "/api/mockup/generate", {
+        method: "POST",
+        body: { idea_id: ideaId, project_id: projectId, style_variant: styleVariant, screen_type: screenType },
+      }),
+  component: (ideaId: number, projectId: number, componentType: string, styleVariant = "MODERN") =>
+    api<{ status: string; data: { html: string; component_name: string; style_variant: string } }>(
+      "/api/mockup/component", {
+        method: "POST",
+        body: { idea_id: ideaId, project_id: projectId, component_type: componentType, style_variant: styleVariant },
+      }),
+  styles: () => api<{ styles: string[]; descriptions: Record<string, string> }>("/api/mockup/styles"),
+  screens: () => api<{ screens: string[] }>("/api/mockup/screens"),
+};
+
+export const scoreApi = {
+  scoreIdea: (idea: Record<string, unknown>, userProfile?: Record<string, unknown>, benchmarks?: Record<string, unknown>) =>
+    api<{ status: string; data: Record<string, unknown> }>("/api/score/idea", {
+      method: "POST",
+      body: { idea, user_profile: userProfile, benchmarks },
+    }),
+  scoreBatch: (ideas: Record<string, unknown>[], userProfile?: Record<string, unknown>) =>
+    api<{ status: string; data: Record<string, unknown>[] }>("/api/score/batch", {
+      method: "POST",
+      body: { ideas, user_profile: userProfile },
+    }),
+  benchmarks: (platform?: string) =>
+    api<{ status: string; data: Record<string, unknown> }>("/api/score/benchmarks", { params: { platform } }),
+};
+
 export const ideaApi = {
   list: (params?: { source?: string; category?: string; skip?: number; limit?: number }) =>
     api<IdeaCard[]>("/api/ideas", { params: params as Record<string, string | number | undefined> }),

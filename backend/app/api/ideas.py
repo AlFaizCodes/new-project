@@ -154,3 +154,131 @@ def feedback(idea_id: int, delta: int = Query(1), db: Session = Depends(get_db))
 @router.get("/categories")
 def categories(db: Session = Depends(get_db)):
     return {"categories": service.list_categories(db)}
+
+
+# ─── Guide 5: UI Mockup Generator ───
+from pydantic import BaseModel
+
+class MockupGenerateRequest(BaseModel):
+    idea_id: int
+    project_id: int
+    style_variant: str = "MODERN"
+    screen_type: str = "landing"
+
+class MockupComponentRequest(BaseModel):
+    idea_id: int
+    project_id: int
+    component_type: str
+    style_variant: str = "MODERN"
+
+@router.post("/mockup/generate")
+def generate_mockup(req: MockupGenerateRequest):
+    from app.agents.ui_designer import UIDesignerAgent
+    agent = UIDesignerAgent()
+    from app.models.idea import Idea
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        idea = db.query(Idea).filter(Idea.id == req.idea_id).first()
+        if not idea:
+            raise HTTPException(404, "Idea not found")
+        idea_data = {"id": idea.id, "title": idea.title, "description": idea.description,
+                     "platform": idea.platform, "tags": idea.tags, "suggested_stack": idea.suggested_stack}
+        result = agent.generate(idea_data, None, req.style_variant, req.screen_type)
+        return {"status": "success", "data": result}
+    finally:
+        db.close()
+
+@router.post("/mockup/component")
+def generate_component(req: MockupComponentRequest):
+    from app.agents.ui_designer import UIDesignerAgent
+    agent = UIDesignerAgent()
+    from app.models.idea import Idea
+    from app.database import SessionLocal
+    db = SessionLocal()
+    try:
+        idea = db.query(Idea).filter(Idea.id == req.idea_id).first()
+        if not idea:
+            raise HTTPException(404, "Idea not found")
+        idea_data = {"id": idea.id, "title": idea.title, "description": idea.description}
+        result = agent.generate_component(idea_data, req.component_type, req.style_variant)
+        return {"status": "success", "data": result}
+    finally:
+        db.close()
+
+@router.get("/mockup/styles")
+def list_mockup_styles():
+    from app.agents.ui_designer import UIDesignerAgent
+    agent = UIDesignerAgent()
+    return {"styles": agent.list_style_variants(), "descriptions": agent._fallback.__globals__["STYLE_VARIANTS"]}
+
+@router.get("/mockup/screens")
+def list_mockup_screens():
+    from app.agents.ui_designer import UIDesignerAgent
+    agent = UIDesignerAgent()
+    return {"screens": agent.list_screen_types()}
+
+
+# ─── Guide 6: Innovation Scoring ───
+
+class ScoreRequest(BaseModel):
+    idea: dict
+    user_profile: Optional[UserProfile] = None
+    benchmarks: Optional[dict] = None
+
+class ScoreBatchRequest(BaseModel):
+    ideas: list[dict]
+    user_profile: Optional[UserProfile] = None
+
+@router.post("/score/idea")
+def score_idea(req: ScoreRequest):
+    from app.agents.scorer import ScorerAgent
+    agent = ScorerAgent()
+    profile = req.user_profile.dict() if req.user_profile else None
+    result = agent.score_with_benchmark(req.idea, profile, req.benchmarks)
+    return {"status": "success", "data": result}
+
+@router.post("/score/batch")
+def score_ideas_batch(req: ScoreBatchRequest):
+    from app.agents.scorer import ScorerAgent
+    agent = ScorerAgent()
+    profile = req.user_profile.dict() if req.user_profile else None
+    results = agent.score_batch(req.ideas, profile)
+    return {"status": "success", "data": results}
+
+@router.get("/score/benchmarks")
+def get_benchmarks(platform: str = None):
+    from app.database import SessionLocal
+    from app.models.idea import CuratedIdea
+    from sqlalchemy import func
+    db = SessionLocal()
+    try:
+        query = db.query(
+            func.avg(CuratedIdea.innovation_score).label("avg_innovation"),
+            func.avg(CuratedIdea.market_potential).label("avg_market"),
+            func.count(CuratedIdea.id).label("count"),
+        )
+        if platform:
+            query = query.filter(CuratedIdea.platform == platform)
+        stats = query.first()
+        return {
+            "status": "success",
+            "data": {
+                "avg_innovation": round(stats.avg_innovation or 50),
+                "avg_market_potential": round(stats.avg_market or 50),
+                "total_ideas": stats.count or 0,
+                "platform": platform or "ALL",
+                "dimensions": {
+                    "originality": {"avg": round(stats.avg_innovation or 50), "max": 100, "min": 10},
+                    "market_potential": {"avg": round(stats.avg_market or 50), "max": 100, "min": 10},
+                    "feasibility": {"avg": 65, "max": 95, "min": 20},
+                    "scalability": {"avg": 55, "max": 90, "min": 15},
+                    "revenue_potential": {"avg": 60, "max": 95, "min": 10},
+                    "competitive_edge": {"avg": 58, "max": 92, "min": 12},
+                    "complexity_match": {"avg": 65, "max": 90, "min": 25},
+                    "time_to_market": {"avg": 62, "max": 95, "min": 20},
+                },
+            },
+        }
+    finally:
+        db.close()

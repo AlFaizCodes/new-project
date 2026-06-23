@@ -25,7 +25,7 @@ async def fetch_all_sources(
         if not existing:
             service.create_idea(db, idea_data)
             count += 1
-    return {"status": "success", "fetched": len(ideas), "new": count}
+    return {"success": True, "fetched": len(ideas), "new": count}
 
 @router.post("/cron/fetch/{source}")
 async def fetch_source(source: str, db: Session = Depends(get_db)):
@@ -38,4 +38,4 @@ async def fetch_source(source: str, db: Session = Depends(get_db)):
         idea_data["source"] = source
         service.create_idea(db, idea_data)
         count += 1
-    return {"status": "success", "source": source, "fetched": count}
+    return {"success": True, "source": source, "fetched": count}

@@ -46,15 +46,25 @@ class IdeaService:
         ranked = ranker.rank(retrieved, **user_profile) if retrieved else []
         top_ideas = ranked[:5]
 
-        # Step 4: Upgrade each with AI
+        # Step 4: Generate or Upgrade ideas
         upgraded = []
-        for curated in top_ideas:
-            result = upgrade.upgrade(curated, user_profile)
-            result["platform"] = detected_platform
-            result["is_curated"] = True
-            result["curated_idea_id"] = curated.get("id")
-            result["source"] = curated.get("source")
-            upgraded.append(result)
+        if top_ideas:
+            for curated in top_ideas:
+                result = upgrade.upgrade(curated, user_profile)
+                result["platform"] = detected_platform
+                result["is_curated"] = True
+                result["curated_idea_id"] = curated.get("id")
+                result["source"] = curated.get("source")
+                upgraded.append(result)
+        else:
+            from app.services.generation_service import GenerationService
+            gen = GenerationService()
+            generated = gen.generate_ideas(raw_input, parsed, user_profile, count=5)
+            for g in generated:
+                g["platform"] = detected_platform
+                g["is_curated"] = False
+                g["source"] = "ai_generated"
+                upgraded.append(g)
 
         # Step 5: Score each
         scored = scorer.score_batch(upgraded, user_profile)

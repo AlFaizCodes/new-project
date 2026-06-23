@@ -151,6 +151,26 @@ class SelectIdeaResponse(BaseModel):
     status: str
     data: dict
 
+# ─── Archaeology Report ───
+class ArchaeologyReportResponse(BaseModel):
+    id: int
+    project_id: int
+    input_type: str
+    input_url: Optional[str] = None
+    input_code: Optional[str] = None
+    code_analysis: Any
+    patterns: Any
+    evolution_timeline: Any
+    thinking_process: Optional[Any] = None
+    scores: Any
+    future_versions: Any
+    detected_stack: Optional[Any] = None
+    architecture_grade: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 # ─── Curated Endpoints ───
 class CuratedSubmitRequest(BaseModel):
     title: str

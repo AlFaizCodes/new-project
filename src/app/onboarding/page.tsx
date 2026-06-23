@@ -75,36 +75,68 @@ const questions = [
   },
 ];
 
+const questionLabels: Record<string, string> = {
+  skillLevel: "Skill Level",
+  budget: "Budget",
+  teamSize: "Team Size",
+  timeline: "Timeline",
+  techPreferences: "Tech Preferences",
+  industry: "Industry",
+};
+
+const answerLabels: Record<string, Record<string, string>> = {
+  skillLevel: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" },
+  budget: { "0": "$0", "100-500": "$100 — $500", "500+": "$500+" },
+  teamSize: { solo: "Just me", small: "2–3 people", large: "5+ people" },
+  timeline: { "2weeks": "2 weeks", "1month": "1 month", "3months+": "3+ months" },
+  industry: {
+    Education: "Education", Healthcare: "Healthcare", FinTech: "FinTech",
+    "E-commerce": "E-commerce", Productivity: "Productivity", Gaming: "Gaming",
+    Social: "Social", Other: "Other",
+  },
+};
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { setProfile } = useStore();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
-  const current = questions[step];
-  const isLast = step === questions.length - 1;
+  const totalSteps = questions.length + 1;
+  const isReviewStep = step === questions.length;
+  const current = isReviewStep ? null : questions[step];
   const isFirst = step === 0;
 
   const handleSelect = (value: string) => {
+    if (!current) return;
     if (current.multi) {
       const prev = (answers[current.id] as string[]) || [];
       const next = prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value];
       setAnswers({ ...answers, [current.id]: next });
     } else {
       setAnswers({ ...answers, [current.id]: value });
-      if (!isLast) setTimeout(() => setStep(step + 1), 200);
+      setTimeout(() => setStep(step + 1), 200);
     }
   };
 
   const canContinue = () => {
-    const val = answers[current.id];
+    if (isReviewStep) return true;
+    const val = answers[current!.id];
     if (!val) return false;
-    if (current.multi) return val.length > 0;
+    if (current!.multi) return val.length > 0;
     return !!val;
   };
 
   const handleFinish = () => {
-    setProfile(answers as unknown as UserProfile);
+    const profile: UserProfile = {
+      skillLevel: (answers.skillLevel as string || "beginner") as UserProfile["skillLevel"],
+      budget: answers.budget === "500+" ? 500 : answers.budget === "100-500" ? 300 : 0,
+      teamSize: answers.teamSize === "solo" ? 1 : answers.teamSize === "small" ? 3 : 5,
+      timeline: answers.timeline === "2weeks" ? "2 weeks" : answers.timeline === "1month" ? "1 month" : "3+ months",
+      techPreferences: (answers.techPreferences as string[]) || [],
+      industry: (answers.industry as string) || "",
+    };
+    setProfile(profile);
     router.push("/dashboard");
   };
 
@@ -113,63 +145,94 @@ export default function OnboardingPage() {
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-1.5 mb-4">
-            {questions.map((_, i) => (
+            {Array.from({ length: totalSteps }).map((_, i) => (
               <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i <= step ? "bg-notionBlue w-6" : "bg-notionBorder w-3"}`} />
             ))}
           </div>
-          <p className="text-xs text-notionGray font-mono">Step {step + 1} of {questions.length}</p>
+          <p className="text-xs text-notionGray font-mono">Step {step + 1} of {totalSteps}</p>
         </div>
 
         <div className="bg-white border border-notionBorder rounded-xl notion-shadow p-6">
-          <h2 className="text-xl font-bold tracking-tight mb-1">{current.title}</h2>
-          {current.multi && <p className="text-xs text-notionGray mb-4">Select all that apply</p>}
-
-          <div className={`${current.multi ? "grid grid-cols-2 gap-2" : "flex flex-col gap-2"} mt-4`}>
-            {current.options.map((opt) => {
-              const selected = current.multi
-                ? (answers[current.id] || []).includes(opt.value)
-                : answers[current.id] === opt.value;
-
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => handleSelect(opt.value)}
-                  className={`text-left p-3 rounded-[8px] border transition-all ${
-                    selected
-                      ? "border-notionBlue bg-notionBlue/5 notion-shadow-sm"
-                      : "border-notionBorder hover:border-black/30 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">{opt.label}</span>
-                    {selected && <CheckCircle2 className="w-4 h-4 text-notionBlue shrink-0" />}
-                  </div>
-                  {"desc" in opt && opt.desc && (
-                    <p className="text-[11px] text-notionGray mt-0.5">{opt.desc}</p>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center justify-between mt-6">
-            <div>
-              {!isFirst && (
+          {isReviewStep ? (
+            <>
+              <h2 className="text-xl font-bold tracking-tight mb-1">Review & Confirm</h2>
+              <p className="text-xs text-notionGray mb-4">Check your answers before starting</p>
+              <div className="space-y-3 mt-4">
+                {questions.map((q) => {
+                  const val = answers[q.id];
+                  const label = q.multi
+                    ? (val as string[] || []).map((v) => answerLabels[q.id]?.[v] || v).join(", ")
+                    : answerLabels[q.id]?.[val as string] || (val as string) || "—";
+                  return (
+                    <div key={q.id} className="flex items-center justify-between py-2 border-b border-notionBorder/50 last:border-0">
+                      <span className="text-xs text-notionGray font-medium">{questionLabels[q.id]}</span>
+                      <span className="text-sm font-semibold text-right max-w-[60%]">{label || "—"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between mt-6">
                 <Button variant="ghost" size="sm" onClick={() => setStep(step - 1)}>
                   <ArrowLeft className="w-3 h-3" /> Back
                 </Button>
-              )}
-            </div>
-            {current.multi ? (
-              <Button size="sm" disabled={!canContinue()} onClick={() => isLast ? handleFinish() : setStep(step + 1)}>
-                {isLast ? "Complete" : "Next"} <ArrowRight className="w-3 h-3" />
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" disabled={!canContinue()} onClick={() => isLast ? handleFinish() : setStep(step + 1)}>
-                Skip
-              </Button>
-            )}
-          </div>
+                <Button size="sm" onClick={handleFinish}>
+                  Confirm <CheckCircle2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold tracking-tight mb-1">{current!.title}</h2>
+              {current!.multi && <p className="text-xs text-notionGray mb-4">Select all that apply</p>}
+
+              <div className={`${current!.multi ? "grid grid-cols-2 gap-2" : "flex flex-col gap-2"} mt-4`}>
+                {current!.options.map((opt) => {
+                  const selected = current!.multi
+                    ? (answers[current!.id] || []).includes(opt.value)
+                    : answers[current!.id] === opt.value;
+
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleSelect(opt.value)}
+                      className={`text-left p-3 rounded-[8px] border transition-all ${
+                        selected
+                          ? "border-notionBlue bg-notionBlue/5 notion-shadow-sm"
+                          : "border-notionBorder hover:border-black/30 bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{opt.label}</span>
+                        {selected && <CheckCircle2 className="w-4 h-4 text-notionBlue shrink-0" />}
+                      </div>
+                      {(opt as { desc?: string }).desc && (
+                        <p className="text-[11px] text-notionGray mt-0.5">{(opt as { desc?: string }).desc}</p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between mt-6">
+                <div>
+                  {!isFirst && (
+                    <Button variant="ghost" size="sm" onClick={() => setStep(step - 1)}>
+                      <ArrowLeft className="w-3 h-3" /> Back
+                    </Button>
+                  )}
+                </div>
+                {current!.multi ? (
+                  <Button size="sm" disabled={!canContinue()} onClick={() => setStep(step + 1)}>
+                    Next <ArrowRight className="w-3 h-3" />
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" disabled={!canContinue()} onClick={() => setStep(step + 1)}>
+                    Skip
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

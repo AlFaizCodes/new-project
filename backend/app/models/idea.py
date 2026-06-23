@@ -1,9 +1,20 @@
 from sqlalchemy import Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey, JSON, Enum
 from sqlalchemy.orm import relationship
-from pgvector.sqlalchemy import Vector
 from datetime import datetime, timezone
 import enum
 from app.database import Base
+from app.config import settings
+
+USE_PGVECTOR = settings.database_url.startswith("postgresql")
+if USE_PGVECTOR:
+    from pgvector.sqlalchemy import Vector as PGVector
+else:
+    PGVector = None
+
+def Vector(dim):
+    if USE_PGVECTOR and PGVector:
+        return PGVector(dim)
+    return JSON
 
 class PlatformEnum(str, enum.Enum):
     WEB = "WEB"
@@ -101,6 +112,8 @@ class Project(Base):
     selected_idea = relationship("Idea", foreign_keys=[selected_idea_id], post_update=True)
     blueprint = relationship("Blueprint", uselist=False, back_populates="project")
     ui_mockup = relationship("UiMockup", uselist=False, back_populates="project")
+    evolution_tree = Column(JSON, nullable=True)
+    archaeology_report = relationship("ArchaeologyReport", uselist=False, back_populates="project")
     parent_project = relationship("Project", remote_side=[id], backref="child_projects")
 
 class Idea(Base):
@@ -192,3 +205,26 @@ class EnhancedIdea(Base):
     user_feedback = Column(Integer, default=0)
 
     original_idea = relationship("Idea", foreign_keys=[original_idea_id])
+
+class ArchaeologyReport(Base):
+    __tablename__ = "archaeology_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), unique=True, nullable=False, index=True)
+    input_type = Column(String(20), nullable=False)
+    input_url = Column(String(2000), nullable=True)
+    input_code = Column(Text, nullable=True)
+    code_analysis = Column(JSON, nullable=False)
+    patterns = Column(JSON, nullable=False)
+    evolution_timeline = Column(JSON, nullable=False)
+    thinking_process = Column(JSON, nullable=True)
+    scores = Column(JSON, nullable=False)
+    future_versions = Column(JSON, nullable=False)
+    detected_stack = Column(JSON, nullable=True)
+    architecture_grade = Column(String(5), nullable=True)
+    raw_analysis = Column(Text, nullable=True)
+    embedding = Column(Vector(1536), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    project = relationship("Project", back_populates="archaeology_report")

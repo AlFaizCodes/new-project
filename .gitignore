@@ -26,6 +26,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
 
 # vercel
@@ -44,3 +45,7 @@ __pycache__/
 env/
 venv/
 .venv/
+*.db
+
+# pgsql (pgAdmin source outside project)
+pgsql/

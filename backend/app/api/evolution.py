@@ -53,25 +53,25 @@ class FurtherRequest(BaseModel):
 def run_critic(req: CriticRequest):
     profile = req.user_profile.dict() if req.user_profile else None
     result = service.run_critic(req.title, req.description, req.features, profile)
-    return {"status": "success", "data": result}
+    return {"success": True, "data": result}
 
 @router.post("/generate")
 def generate_evolutions(req: GenerateRequest):
     profile = req.user_profile.dict() if req.user_profile else None
     result = service.run_full_pipeline(req.title, req.description, req.features, profile, req.count)
-    return {"status": "success", "data": result}
+    return {"success": True, "data": result}
 
 @router.post("/evolve")
 def evolve_from_critic(req: EvolveRequest):
     profile = req.user_profile.dict() if req.user_profile else None
     result = service.run_evolver(req.title, req.description, req.critic_report, req.features, profile, req.count)
-    return {"status": "success", "data": result}
+    return {"success": True, "data": result}
 
 @router.post("/score")
 def score_evolutions(req: ScoreRequest):
     profile = req.user_profile.dict() if req.user_profile else None
     result = service.run_scorer(req.evolutions, profile)
-    return {"status": "success", "data": result}
+    return {"success": True, "data": result}
 
 @router.get("/tree/{project_id}")
 def get_tree(project_id: int, db: Session = Depends(get_db)):
@@ -83,10 +83,10 @@ def get_tree(project_id: int, db: Session = Depends(get_db)):
 @router.post("/select")
 def select_version(req: SelectRequest, db: Session = Depends(get_db)):
     result = service.select_version(db, req.project_id, req.version_id, req.version_data)
-    return {"status": "success", "data": result}
+    return {"success": True, "data": result}
 
 @router.post("/further")
 def evolve_further(req: FurtherRequest, db: Session = Depends(get_db)):
     profile = req.user_profile.dict() if req.user_profile else None
     result = service.evolve_further(db, req.project_id, req.parent_tree_id, req.title, req.description, req.critic_report, req.features, profile, req.count)
-    return {"status": "success", "data": result}
+    return {"success": True, "data": result}

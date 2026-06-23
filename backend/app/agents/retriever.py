@@ -2,16 +2,18 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.models.idea import CuratedIdea
 from app.agents.embedding import EmbeddingGenerator
+from app.config import settings
 
 embedder = EmbeddingGenerator()
+USE_PGVECTOR = settings.database_url.startswith("postgresql")
 
 class RetrieverAgent:
     """Semantic search in curated database with platform + user constraint filtering."""
 
     def retrieve(self, db: Session, user_input: str, platform: str = None, skill_level: str = None, budget: int = 0, limit: int = 10) -> list[CuratedIdea]:
-        embedding = embedder.generate(user_input)
+        embedding = embedder.generate(user_input) if USE_PGVECTOR else None
 
-        if embedding and all(v == 0.0 for v in embedding):
+        if USE_PGVECTOR and embedding and all(v == 0.0 for v in embedding):
             embedding = None
 
         if embedding:

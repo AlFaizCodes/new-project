@@ -1,11 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.ideas import router as ideas_router
-from app.api.fetch import router as fetch_router
 from app.api.users import router as users_router
 from app.api.evolution import router as evolution_router
 from app.api.archaeology import router as archaeology_router
 from app.api.export_api import router as export_router
+
+try:
+    from app.api.fetch import router as fetch_router
+    HAS_FETCH = True
+except ImportError:
+    HAS_FETCH = False
+    fetch_router = None
 from app.database import engine, Base
 
 Base.metadata.create_all(bind=engine)
@@ -25,7 +31,8 @@ app.add_middleware(
 )
 
 app.include_router(ideas_router)
-app.include_router(fetch_router)
+if HAS_FETCH and fetch_router:
+    app.include_router(fetch_router)
 app.include_router(users_router)
 app.include_router(evolution_router)
 app.include_router(archaeology_router)

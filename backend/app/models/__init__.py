@@ -1,1 +1,1 @@
-from app.models.idea import Idea, EnhancedIdea, CuratedIdea, User, Project, Blueprint, UiMockup
+from app.models.idea import Idea, EnhancedIdea, CuratedIdea, User, Project, Blueprint, UiMockup, ArchaeologyReport

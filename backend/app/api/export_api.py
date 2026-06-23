@@ -21,7 +21,7 @@ def export_blueprint_json(idea_id: int, db: Session = Depends(get_db)):
     data = service.export_blueprint_json(db, idea_id)
     if not data:
         raise HTTPException(404, "Blueprint not found")
-    return {"status": "success", "data": data}
+    return {"success": True, "data": data}
 
 
 @router.get("/mockup/{idea_id}/html")

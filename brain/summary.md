@@ -1,173 +1,135 @@
 # IdeaDNA Workspace Summary & Memory
 
 ## Project Overview
-AI-Powered Idea Evolution Platform. Next.js 14 + Python FastAPI + PostgreSQL + pgvector + OpenAI.
+AI-Powered Idea Evolution Platform. Next.js 14 + Python FastAPI + SQLite (dev) / PostgreSQL (prod) + OpenAI.
 
-## Frontend (Next.js 14 + Tailwind CSS)
-| Route | Page | 3D? |
+## Frontend (Next.js 14 + Tailwind CSS + Framer Motion)
+| Route | Page | Notes |
 |---|---|---|
-| `/` | Landing — dark hero band (#213183), 3D canvas, DNA sliders, evolution tree, feature cards | ✅ |
+| `/` | Landing — glassmorphic navbar, video hero, animated heading, search pill, clean footer | 🆕 Redesigned |
 | `/login` | Sign-in with email/password + OAuth | — |
 | `/register` | Sign-up flow | — |
-| `/onboarding` | 6-question survey (skill, budget, team, timeline, tech, industry) | — |
+| `/onboarding` | 7-step wizard (skill, budget, team, timeline, tech, industry) + Review & Confirm | — |
 | `/dashboard` | Project management, stats, search, filters | — |
-| `/generate` | **Idea Generator v2** — platform selector (8), problem input, 6-agent pipeline curated DB → AI upgrade → 4D scoring, profile bar, selection → deep-dive trigger | ✅ |
-| `/evolve` | Evolution Engine — critic report, React Flow tree, version selection | — |
-| `/analyze` | Code Archaeology — 3 input tabs, 6-agent pipeline report | — |
-| `/project/[id]` | Deep-dive — 7-section blueprint accordion, UI mockup w/ device toggle | ✅ |
-| `/sources` | Data source management (Devpost, PH, GitHub, HN, Reddit) | ✅ |
+| `/generate` | Idea Generator v2 — platform selector, input, pipeline, scoring | — |
+| `/evolve` | Evolution Engine — critic report, React Flow tree | — |
+| `/analyze` | Code Archaeology — 3 input tabs, 6-agent pipeline | — |
+| `/project/[id]` | Deep-dive — blueprint accordion, UI mockup | — |
+| `/sources` | Data source management | — |
 
-**3D Components**: `ThreeBackground` (particle field + floating helix), `DnaCanvas` (double helix)
-
-## Design System
-- **Colors**: `#f6f5f4` canvas (off-white), hairline `#e6e6e6` borders, Notion Blue `#0075de` CTAs
-- **Dark hero band**: `#213183` deep indigo inverted section on landing
-- **Sticker palette**: purple `#7b5ea7`, teal `#0e7c7b`, sky `#1a8bbf`, amber `#d4731a`, pink `#b0436f`
-- **Notion-style**: notion-shadow (0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)), rounded-[4px] inputs, rounded-xl cards
-- **Typography**: Inter font, 12px/14px/16px sizes, monospace for code/tags
-- **Components**: Button (4 variants: primary, secondary, ghost, utility, utility-blue), Input, Badge (4 variants: default, purple, teal, sky)
-- **Layout**: Navbar (responsive + mobile hamburger), Footer, DashboardLayout (sidebar)
+## Design System (Current)
+- **Colors**: `#EDEEF5` bg-base (off-white), `#9fff00` brand-green (selection), `#1a1a1a` text
+- **Typography**: Inter (sans) + Outfit (display) via `next/font/google`
+- **Glassmorphism**: `bg-gradient-to-b from-[#f1f1f1]/80 to-transparent backdrop-blur-[2px]`
+- **Selection**: `selection:bg-brand-green selection:text-black`
+- **Components**: Navbar (fixed, 12-col grid, animated hamburger, mobile drawer via AnimatePresence), Footer (4-col grid with Services/Resources/Company)
+- **3D Components** (removed from landing, kept on other pages): `ThreeBackground`, `DnaCanvas`
 
 ## Backend (Python FastAPI)
 
 ### Architecture
-- **FastAPI** app with CORS middleware, health check, 3 router mounts
-- **SQLAlchemy** ORM with pgvector extension for 1536-dim vector search
-- **9 database tables**: `users`, `curated_ideas`, `projects`, `ideas`, `blueprints`, `ui_mockups`, `enhanced_ideas`, plus alembic migrations
+- **FastAPI** app with CORS middleware, health check, 6 routers
+- **SQLAlchemy** ORM — runs on PostgreSQL with pgvector OR SQLite (auto-detected via `database.py`)
+- **10 database tables**: `users`, `curated_ideas`, `projects`, `ideas`, `blueprints`, `ui_mockups`, `enhanced_ideas`, `archaeology_reports`, plus alembic migrations
 
-### Models (SQLAlchemy + pgvector)
-
-**User**: id, email, name, skill_level, budget, team_size, timeline, tech_prefs, learning_goals, industry, years_of_experience, preferred_platform, style_preference, timestamps. Rel: projects
-
-**CuratedIdea**: id, title, description, problem_statement, solution, key_features (JSON), platform (indexed), sub_category, innovation_score, market_potential, complexity (indexed), suggested_stack (JSON), tags (JSON), source, trending_score, embedding (vector(1536)), timestamps. Indexes: platform, complexity, embedding (GIN)
-
-**Project**: id, user_id (FK), title, description, mode (GENERATOR/EVOLUTION/ARCHAEOLOGY), status (DRAFT/SELECTED/COMPLETED/ARCHIVED), original_input, platform, selected_idea_id (FK→ideas, unique), parent_project_id (FK→projects self-ref), embedding (vector(1536)), timestamps. Rel: user, ideas, selected_idea, blueprint (1:1), ui_mockup (1:1), parent/child projects
-
-**Idea**: id, project_id (FK), source, title, description, problem_statement, solution, key_features (JSON), innovation_score, feasibility_score, difficulty, platform, tags (JSON), suggested_stack (JSON), upgrade_notes (JSON), upvotes, embedding (vector(1536)), is_curated, curated_idea_id (FK→curated_ideas), timestamps. Rel: project, curated_idea, blueprint (1:1), ui_mockup (1:1)
-
-**Blueprint**: id, idea_id (FK, unique), project_id (FK, unique), overview, prd (JSON), tech_stack (JSON), database_schema (JSON), api_design (JSON), user_flow (JSON), implementation_plan (JSON), markdown, openapi_spec, mermaid_diagrams (JSON), timestamps. Rel: idea, project
-
-**UiMockup**: id, idea_id (FK, unique), project_id (FK, unique), html, css, components (JSON), style_variant, mobile_notes, tablet_notes, timestamps. Rel: idea, project
-
-**EnhancedIdea**: id, original_idea_id (FK→ideas), enhanced_title, enhanced_description, target_audience, monetization, tech_stack (JSON), market_potential, difficulty, unique_angle, competitors (JSON), mvp_timeline, generated_by, timestamps, user_feedback
+### SQLite Adaptation
+- PostgreSQL not available on dev machine → SQLite fallback
+- `Vector()` factory function in `models/idea.py` returns `PGVector` (PostgreSQL) or `JSON` (SQLite)
+- `retriever.py` skips pgvector queries when `USE_PGVECTOR=False`
+- `Config.env_file = ".env"` reads from backend directory
 
 ### 6-Agent Generator Pipeline
-1. **InputParserAgent** (temp 0.3, GPT-4): Extracts problem_statement, platform, target_audience, constraints, tone, keywords
-2. **RetrieverAgent** (no AI, pgvector): Semantic search in curated_ideas with platform filter + user constraint filtering (skill/budget)
-3. **RankerAgent** (no AI, algorithm): Weighted ranking: similarity*0.15 + innovation*0.25 + market*0.15 + diff_match*0.30 + trending*0.05 + tech_pref*0.10
-4. **UpgradeAgent** (temp 0.6, GPT-4): Personalizes curated idea for user profile (skill/budget/team/timeline/tech_prefs)
-5. **ScorerAgent** (temp 0.2, GPT-4): 4-dimension scoring: originality, feasibility, market_potential, complexity_match → overall + verdict
-6. **OutputFormatterAgent** (no AI): Formats cards with colors, badges, icons, UI-ready structure
+1. **InputParserAgent** (temp 0.3): Extracts problem_statement, platform, audience, tone, keywords
+2. **RetrieverAgent** (no AI): Semantic search in curated_ideas (pgvector) or fallback ORDER BY innovation_score
+3. **RankerAgent** (no AI): Weighted ranking algorithm
+4. **UpgradeAgent** (temp 0.6): Personalizes curated ideas for user profile
+5. **ScorerAgent** (temp 0.2): 8-dimension scoring (originality, feasibility, market, complexity, scalability, revenue, competitive_edge, time_to_market) → overall + verdict
+6. **OutputFormatterAgent** (no AI): Formats cards with colors, badges, icons
+
+**Fallback when no curated ideas**: `GenerationService` generates fresh ideas from scratch using OpenAI (or mock data if API fails/quota exhausted)
 
 ### Additional Agents
-- **BlueprintArchitectAgent** (temp 0.4, GPT-4): 7-section production blueprint (overview, PRD, tech_stack, db_schema, api_design, user_flow, implementation_plan) — lazy-loaded on idea selection
-- **UIDesignerAgent** (temp 0.5, GPT-4): Full HTML/CSS landing page with Tailwind CDN, dark theme, 7 sections — lazy-loaded on idea selection
+- **BlueprintArchitectAgent** (temp 0.4): 7-section production blueprint — lazy-loaded on idea selection
+- **UIDesignerAgent** (temp 0.5): HTML/CSS Tailwind landing page with 5 style variants, 4 screen types — lazy-loaded
+- **CriticAgent** (temp 0.3) + **EvolverAgent** (temp 0.6): Evolution engine with React Flow visualization
+- **Archaeology Pipeline** (6 agents): CodeParser, PatternDetector, IdeaHistorian, DevPsychologist, Scorer, Evolver
 
 ### API Endpoints (v2.0)
+**Generator Pipeline**: `POST /generator/full`, `POST /generator/parse`
+**Projects**: `POST /projects`, `GET /projects`, `GET /projects/{id}`, `GET /projects/{id}/ideas`, `DELETE /projects/{id}`
+**Ideas**: `POST /ideas/generate`, `POST /ideas/select?project_id=X`, `GET /ideas/{id}/blueprint`, `GET /ideas/{id}/mockup`, `GET /ideas/trending`, `GET /ideas/similar`, `POST /ideas/{id}/feedback`
+**Curated**: `GET /curated`, `GET /curated/platforms`, `GET /curated/trending`, `POST /curated/submit`
+**User**: `GET /user/profile`, `POST /user/profile`, `PATCH /user/profile`, `GET /user/projects`, `GET /user/stats`
+**Evolution**: 7 endpoints for evolution engine
+**Archaeology**: `POST /analyze`, `GET /report/{project_id}`
+**Export**: `GET /export/blueprint/{id}/{format}`, `GET /export/mockup/{id}`
+**Score**: `POST /score/idea`, `POST /score/batch`, `GET /score/benchmarks`
+**Mockup**: `POST /mockup/generate`, `POST /mockup/component`, `GET /mockup/styles`, `GET /mockup/screens`
+**Health**: `GET /health`
 
-**Generator Pipeline**:
-- `POST /api/generator/full` — Run full 6-agent pipeline
-- `POST /api/generator/parse` — Run InputParserAgent only
+### Frontend API Client (`src/lib/api.ts`)
+- All calls wrapped with 5s AbortController timeout
+- Response format: `{ success, data }` (changed from `{ status, data }`)
+- 16 React Query hooks in `src/lib/hooks.ts`
 
-**Projects**:
-- `POST /api/projects` — Create project
-- `GET /api/projects` — List user projects
-- `GET /api/projects/{id}` — Get project
-- `GET /api/projects/{id}/ideas` — List project ideas
+## Current Session Changes (Landing Redesign + Bugfixes)
 
-**Idea Selection (lazy-loaded)**:
-- `POST /api/ideas/select?project_id=X` — Select idea, triggers BlueprintArchitect + UIDesigner
-- `GET /api/ideas/{id}/blueprint` — Get blueprint (after selection)
-- `GET /api/ideas/{id}/mockup` — Get UI mockup (after selection)
+### Landing Page Redesign
+- **Background**: Changed from `#f6f5f4` to `#EDEEF5` (bg-base)
+- **Brand**: "IdeaDNA" → "mėntality" with clover/flower SVG icon
+- **Fonts**: Added Outfit as `font-display` alongside Inter
+- **Navbar**: Fixed glassmorphic, 12-col grid, "service/patient resources/about us/education center" nav links, "find help" + "get started →" CTA, animated hamburger with AnimatePresence mobile drawer
+- **Hero**: CloudFront video background, `min-h-[140vh]`, gradient mask, animated heading with eye/pupil inline icon, search pill ("Ask me anything..."), Start Free + Sign In buttons
+- **Edge Anchors**: Language pill (pl—en) on right edge, "2024" bottom-left, "mental health tools" bottom-right
+- **Footer**: 4-column grid with brand + Services (Therapy, Counseling, Support Groups, Crisis Helpline) + Resources (Articles, Guides, Self Assessments, Education Center) + Company (About, Careers, Contact, Privacy Policy)
+- **Removed**: 3D Explorer, DNA helix, evolution tree, feature cards from landing page
 
-**Curated Ideas**:
-- `GET /api/curated` — List curated ideas (filter by platform/complexity)
-- `GET /api/curated/platforms` — List all platform categories
-- `GET /api/curated/trending` — Get trending curated ideas
-- `POST /api/curated/submit` — Submit new curated idea
+### Backend Bugfixes
+- **Route ordering**: Moved `GET /ideas/trending` and `GET /ideas/similar` before `GET /ideas/{idea_id}` to fix 422 error (path param was catching "trending")
+- **GenerationService**: Added fallback to generate ideas from scratch via OpenAI when curated DB is empty
+- **Fetch router**: Wrapped in try/except for Python 3.14 compatibility (`from typing import list, dict` removed)
+- **schemas/__init__.py**: Updated to import correct schema classes
+- **response_model**: Removed from endpoints returning `{success: true}` dicts to avoid serialization mismatch
 
-**Backward Compat / Legacy**:
-- `GET /api/ideas` — List ideas (source/category filter)
-- `GET /api/ideas/{id}` — Get idea by ID
-- `POST /api/ideas/generate` — Full generate with project creation
-- `GET /api/ideas/similar` — Vector similarity search
-- `GET /api/ideas/trending` — Trending ideas
-- `POST /api/ideas/{id}/feedback` — Upvote/downvote
-- `GET /api/categories` — List distinct platforms
+### Config Fixes
+- **tsconfig.json**: Changed `include` from `"**/*.ts", "**/*.tsx"` to `"./src/**/*.ts", "./src/**/*.tsx"` to exclude `pgsql/` directory
+- **Tailwind**: Added `bg-base: #EDEEF5`, `brand-green: #9fff00`, `font-display: Outfit`
 
-**User**:
-- `GET /api/user/profile` — Get user profile
-- `POST /api/user/profile` — Create or update user profile
+### API Response Alignment
+All endpoints changed from `{ status: "success", data }` to `{ success: true, data }` per Rules doc
 
-**Fetch (data sources)**:
-- `POST /api/cron/fetch-all` — Fetch from all 5 sources (Devpost, PH, GitHub, HN, Reddit)
-- `POST /api/cron/fetch/{source}` — Fetch from single source
+### Current Status
+- **Frontend**: Running on `http://localhost:3000` — all 8 pages return 200
+- **Backend**: Running on `http://localhost:8000` — all endpoints return 200/404 gracefully
+- **OpenAI**: Key valid but quota exhausted (429) — all agents return realistic mock data
+- **Database**: SQLite with 0 curated ideas — GenerationService fills the gap
+- **Build**: `npm run build` passes with zero errors across 18 routes
+- **pgvector**: Disabled on SQLite — falls back to `ORDER BY innovation_score DESC`
 
-**Health**: `GET /health` — Returns `{"status": "healthy", "version": "2.0.0"}`
+## Files Changed (This Session)
+- `tailwind.config.ts` — New colors/fonts
+- `src/app/globals.css` — #EDEEF5 bg, green selection
+- `src/app/layout.tsx` — Inter + Outfit fonts, selection classes
+- `src/app/page.tsx` — Simplified to just `<Hero />`
+- `src/components/Hero.tsx` — **New**: Video hero with animations
+- `src/components/layout/Navbar.tsx` — **Rewritten**: Glassmorphic design
+- `src/components/layout/Footer.tsx` — **Rewritten**: 4-col useful links
+- `tsconfig.json` — Fixed include pattern
+- `backend/app/services/generation_service.py` — **New**: AI idea generation from scratch
+- `backend/app/services/idea_service.py` — Added fallback to GenerationService
+- `backend/app/api/ideas.py` — Fixed route ordering, removed response_model
+- `backend/app/schemas/__init__.py` — Updated imports
+- `backend/main.py` — Wrapped fetch router import
 
-### AI Agents Configuration
-| Agent | Temp | Model | Purpose |
-|-------|------|-------|---------|
-| InputParser | 0.3 | GPT-4 | Structured extraction from raw input |
-| Retriever | N/A | pgvector | Semantic search in curated DB |
-| Ranker | N/A | Algorithm | Weighted ranking by user profile |
-| Upgrade | 0.6 | GPT-4 | Personalize curated ideas |
-| Scorer | 0.2 | GPT-4 | 4-dimension objective scoring |
-| BlueprintArchitect | 0.4 | GPT-4 | 7-section production blueprint |
-| UIDesigner | 0.5 | GPT-4 | HTML/CSS landing page mockup |
-
-### Data Fetchers
-- **DevpostFetcher**: bs4 scrape of hackathon projects
-- **ProductHuntFetcher**: GraphQL API (free tier)
-- **GitHubFetcher**: REST API with token auth
-- **HackerNewsFetcher**: Firebase API (unlimited)
-- **RedditFetcher**: OAuth API
-
-### Seed Data
-- `backend/seed_curated.py` — 500+ curated ideas across 8 platforms (WEB, MOBILE, AI_ML, BLOCKCHAIN, IOT, DESKTOP, EXTENSION, API_BACKEND)
-- Each platform has 12-15 hand-curated ideas with innovation_score, market_potential, complexity, suggested_stack, tags, source
-
-### Files
-- `backend/main.py` — FastAPI entry point
-- `backend/seed_curated.py` — Curated DB seed script
-- `backend/app/models/idea.py` — All 9 SQLAlchemy models with pgvector
-- `backend/app/schemas/idea.py` — Pydantic schemas (UserProfile, CuratedIdeaResponse, ProjectResponse, IdeaCard, BlueprintResponse, UiMockupResponse, GenerateRequest, etc.)
-- `backend/app/agents/` — 9 agents (input_parser, retriever, ranker, upgrade, scorer, output_formatter, blueprint_architect, ui_designer, embedding)
-- `backend/app/services/idea_service.py` — Full business logic with 6-agent pipeline orchestration
-- `backend/app/api/ideas.py` — All REST endpoints
-- `backend/app/api/users.py` — User profile CRUD
-- `backend/app/api/fetch.py` — Data source fetch endpoints
-- `backend/app/config.py` — Settings with env loading
-- `backend/app/database.py` — SQLAlchemy engine + session
-- `backend/app/fetchers/` — 5 data source fetchers
-
-## Frontend API Client (`src/lib/api.ts`)
-- `userApi`: getProfile, createOrUpdateProfile
-- `generatorApi`: full (6-agent pipeline)
-- `curatedApi`: list, platforms, trending
-- `projectApi`: list, create, get, ideas
-- `ideaApi`: list, get, select (triggers blueprint+mockup), blueprint, mockup, generate, similar, trending, vote, categories
-
-## Key Design Decisions
-1. **Curated DB + AI Upgrade hybrid** (not pure AI generation) — quality guaranteed from 500+ curated ideas, personalized via AI
-2. **pgvector over Pinecone/Weaviate** — self-hosted, no extra costs
-3. **6-agent pipeline** replaces simple prompt-to-idea approach
-4. **Lazy-loading** — blueprint + mockup generated ONLY on idea selection (80% cost reduction)
-5. **GPT-4 `response_format: {"type": "json_object"}`** for structured AI output
-6. **User profile injection** into every agent prompt for personalization
-7. **Profile bar** on generate page shows skill level, budget, team size, timeline
-
-## Known Issues / Blocked
-- Backend requires PostgreSQL + pgvector extension to run; cannot start without DB
-- OpenAI API key required for real AI enhancement; falls back to mock data
-- Data fetchers require API keys (Product Hunt, GitHub, Reddit)
-- All frontend pages use fallback mock data when API is unavailable
-- Onboarding page stores UserProfile with lowercase values (beginner, intermediate) but backend expects uppercase (BEGINNER, INTERMEDIATE) — mapping needed
+## Known Issues
+- OpenAI API quota exhausted — all agents return mock data
+- pgvector disabled on SQLite — no semantic search
+- Data fetchers require API keys (Product Hunt, GitHub, Reddit) — fallback to mock
+- Clerk authentication not implemented — mock login/register only
 
 ## Next Steps
-1. Configure backend `.env` with DATABASE_URL, OPENAI_API_KEY, GITHUB_TOKEN, etc.
-2. Run `uvicorn main:app --reload --port 8000` in `backend/` directory
-3. Run `python seed_curated.py` to populate curated database
-4. Set `NEXT_PUBLIC_API_URL=http://localhost:8000` in frontend `.env.local`
-5. Add Clerk/NextAuth authentication integration
-6. Build remaining features: Evolution Engine (Guide 2), Code Archaeology (Guide 3), Evolution Tree visualization, D3.js radar chart, export functionality
+1. Add OpenAI billing credits for real AI generation
+2. Seed curated ideas table with 500+ entries
+3. Install PostgreSQL + pgvector for production
+4. Implement Clerk/NextAuth authentication
+5. Build missing pages: /service, /resources, /about, /education, /help

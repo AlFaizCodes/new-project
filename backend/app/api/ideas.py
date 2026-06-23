@@ -17,18 +17,18 @@ router = APIRouter(prefix="/api", tags=["ideas"])
 service = IdeaService()
 
 # ─── Generator Full Pipeline ───
-@router.post("/generator/full", response_model=GeneratorFullResponse)
+@router.post("/generator/full")
 def generator_full(req: GeneratorFullRequest, db: Session = Depends(get_db)):
     profile = req.user_profile.dict() if req.user_profile else None
     output = service.run_generator_pipeline(db, req.input, req.platform, profile)
-    return GeneratorFullResponse(status="success", data=output)
+    return {"success": True, "data": output}
 
-@router.post("/generator/parse", response_model=GeneratorFullResponse)
+@router.post("/generator/parse")
 def generator_parse(req: GeneratorFullRequest, db: Session = Depends(get_db)):
     from app.agents.input_parser import InputParserAgent
     parser = InputParserAgent()
     parsed = parser.parse(req.input)
-    return GeneratorFullResponse(status="success", data={"parsed_input": parsed})
+    return {"success": True, "data": {"parsed_input": parsed}}
 
 # ─── Projects ───
 @router.post("/projects", response_model=ProjectResponse)
@@ -60,7 +60,7 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Project not found")
     db.delete(project)
     db.commit()
-    return {"status": "success", "message": "Project deleted"}
+    return {"success": True, "message": "Project deleted"}
 
 # ─── Ideas (for a project) ───
 @router.get("/projects/{project_id}/ideas", response_model=list[IdeaCard])
@@ -68,12 +68,12 @@ def list_project_ideas(project_id: int, db: Session = Depends(get_db)):
     return service.get_project_ideas(db, project_id)
 
 # ─── Select Idea → triggers Blueprint + Mockup (lazy-loaded) ───
-@router.post("/ideas/select", response_model=SelectIdeaResponse)
+@router.post("/ideas/select")
 def select_idea(req: SelectIdeaRequest, project_id: int = Query(...), db: Session = Depends(get_db)):
     result = service.select_idea(db, project_id, req.idea_id)
     if not result:
         raise HTTPException(404, "Idea or project not found")
-    return SelectIdeaResponse(status="success", data=result)
+    return {"success": True, "data": result}
 
 # ─── Blueprint (lazy-loaded) ───
 @router.get("/ideas/{idea_id}/blueprint", response_model=BlueprintResponse)
@@ -111,21 +111,22 @@ def submit_curated(req: CuratedSubmitRequest, db: Session = Depends(get_db)):
     db.add(idea)
     db.commit()
     db.refresh(idea)
-    return {"status": "success", "id": idea.id}
+    return {"success": True, "id": idea.id}
 
 # ─── Legacy endpoints (backward compat) ───
 @router.get("/ideas", response_model=list[IdeaCard])
 def list_ideas(source: str = None, category: str = None, skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     return service.list_ideas(db, source, category, skip, limit)
 
-@router.get("/ideas/{idea_id}", response_model=IdeaCard)
-def get_idea(idea_id: int, db: Session = Depends(get_db)):
-    idea = service.get_idea(db, idea_id)
-    if not idea:
-        raise HTTPException(404)
-    return idea
+@router.get("/ideas/similar", response_model=list[dict])
+def similar_ideas(idea_id: int = Query(...), db: Session = Depends(get_db)):
+    return service.find_similar(db, idea_id)
 
-@router.post("/ideas/generate", response_model=GenerateResponse)
+@router.get("/ideas/trending", response_model=list[IdeaCard])
+def trending_ideas(db: Session = Depends(get_db)):
+    return service.get_trending(db)
+
+@router.post("/ideas/generate")
 def generate_ideas(req: GenerateRequest, db: Session = Depends(get_db)):
     profile = req.user_profile.dict() if req.user_profile else {}
     output = service.run_generator_pipeline(db, req.prompt, req.platform, profile)
@@ -139,19 +140,11 @@ def generate_ideas(req: GenerateRequest, db: Session = Depends(get_db)):
     else:
         project_id = None
 
-    return GenerateResponse(status="success", data={
+    return {"success": True, "data": {
         "original_concept": req.prompt,
         "project_id": project_id,
         **output,
-    })
-
-@router.get("/ideas/similar", response_model=list[dict])
-def similar_ideas(idea_id: int = Query(...), db: Session = Depends(get_db)):
-    return service.find_similar(db, idea_id)
-
-@router.get("/ideas/trending", response_model=list[IdeaCard])
-def trending_ideas(db: Session = Depends(get_db)):
-    return service.get_trending(db)
+    }}
 
 @router.post("/ideas/{idea_id}/feedback")
 def feedback(idea_id: int, delta: int = Query(1), db: Session = Depends(get_db)):
@@ -159,6 +152,13 @@ def feedback(idea_id: int, delta: int = Query(1), db: Session = Depends(get_db))
     if not idea:
         raise HTTPException(404)
     return {"upvotes": idea.upvotes}
+
+@router.get("/ideas/{idea_id}", response_model=IdeaCard)
+def get_idea(idea_id: int, db: Session = Depends(get_db)):
+    idea = service.get_idea(db, idea_id)
+    if not idea:
+        raise HTTPException(404)
+    return idea
 
 @router.get("/categories")
 def categories(db: Session = Depends(get_db)):
@@ -194,7 +194,7 @@ def generate_mockup(req: MockupGenerateRequest):
         idea_data = {"id": idea.id, "title": idea.title, "description": idea.description,
                      "platform": idea.platform, "tags": idea.tags, "suggested_stack": idea.suggested_stack}
         result = agent.generate(idea_data, None, req.style_variant, req.screen_type)
-        return {"status": "success", "data": result}
+        return {"success": True, "data": result}
     finally:
         db.close()
 
@@ -211,7 +211,7 @@ def generate_component(req: MockupComponentRequest):
             raise HTTPException(404, "Idea not found")
         idea_data = {"id": idea.id, "title": idea.title, "description": idea.description}
         result = agent.generate_component(idea_data, req.component_type, req.style_variant)
-        return {"status": "success", "data": result}
+        return {"success": True, "data": result}
     finally:
         db.close()
 
@@ -245,7 +245,7 @@ def score_idea(req: ScoreRequest):
     agent = ScorerAgent()
     profile = req.user_profile.dict() if req.user_profile else None
     result = agent.score_with_benchmark(req.idea, profile, req.benchmarks)
-    return {"status": "success", "data": result}
+    return {"success": True, "data": result}
 
 @router.post("/score/batch")
 def score_ideas_batch(req: ScoreBatchRequest):
@@ -253,7 +253,7 @@ def score_ideas_batch(req: ScoreBatchRequest):
     agent = ScorerAgent()
     profile = req.user_profile.dict() if req.user_profile else None
     results = agent.score_batch(req.ideas, profile)
-    return {"status": "success", "data": results}
+    return {"success": True, "data": results}
 
 @router.get("/score/benchmarks")
 def get_benchmarks(platform: str = None):
@@ -271,7 +271,7 @@ def get_benchmarks(platform: str = None):
             query = query.filter(CuratedIdea.platform == platform)
         stats = query.first()
         return {
-            "status": "success",
+            "success": True,
             "data": {
                 "avg_innovation": round(stats.avg_innovation or 50),
                 "avg_market_potential": round(stats.avg_market or 50),

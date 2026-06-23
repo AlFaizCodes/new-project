@@ -19,18 +19,26 @@ async function api<T>(path: string, options: FetchOptions = {}): Promise<T> {
     if (qs) url += `?${qs}`;
   }
 
-  const res = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => "");
-    throw new Error(`API error: ${res.status} ${res.statusText} — ${err}`);
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => "");
+      throw new Error(`API error: ${res.status} ${res.statusText} — ${err}`);
+    }
+
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return res.json();
 }
 
 // ─── Types ───
@@ -160,7 +168,7 @@ export interface GeneratorCard {
 }
 
 export interface GeneratorResult {
-  status: string;
+  success: boolean;
   data: {
     parsed_input: {
       problem_statement: string;
@@ -175,7 +183,7 @@ export interface GeneratorResult {
 }
 
 export interface LegacyGenerateResult {
-  status: string;
+  success: boolean;
   data: {
     original_concept: string;
     project_id: number | null;
@@ -186,7 +194,7 @@ export interface LegacyGenerateResult {
 }
 
 export interface SelectIdeaResult {
-  status: string;
+  success: boolean;
   data: {
     blueprint: Record<string, unknown>;
     mockup: { html: string; style_variant: string };
@@ -244,17 +252,17 @@ export interface ArchaeologyResult {
 
 export const archaeologyApi = {
   analyzeCode: (code: string) =>
-    api<{ status: string; data: ArchaeologyResult }>("/api/archaeology/code", {
+    api<{ success: boolean; data: ArchaeologyResult }>("/api/archaeology/code", {
       method: "POST",
       body: { code },
     }),
   analyzeGithub: (url: string) =>
-    api<{ status: string; data: ArchaeologyResult }>("/api/archaeology/github", {
+    api<{ success: boolean; data: ArchaeologyResult }>("/api/archaeology/github", {
       method: "POST",
       body: { url },
     }),
   analyzeWebsite: (url: string) =>
-    api<{ status: string; data: ArchaeologyResult }>("/api/archaeology/website", {
+    api<{ success: boolean; data: ArchaeologyResult }>("/api/archaeology/website", {
       method: "POST",
       body: { url },
     }),
@@ -264,20 +272,20 @@ export const exportApi = {
   blueprintMarkdown: (ideaId: number) =>
     api<string>(`/api/export/blueprint/${ideaId}/markdown`),
   blueprintJson: (ideaId: number) =>
-    api<{ status: string; data: Record<string, unknown> }>(`/api/export/blueprint/${ideaId}/json`),
+    api<{ success: boolean; data: Record<string, unknown> }>(`/api/export/blueprint/${ideaId}/json`),
   mockupHtml: (ideaId: number) =>
     api<string>(`/api/export/mockup/${ideaId}/html`),
 };
 
 export const mockupApi = {
   generate: (ideaId: number, projectId: number, styleVariant = "MODERN", screenType = "landing") =>
-    api<{ status: string; data: { html: string; style_variant: string; screen_type: string; components: Record<string, boolean> } }>(
+    api<{ success: boolean; data: { html: string; style_variant: string; screen_type: string; components: Record<string, boolean> } }>(
       "/api/mockup/generate", {
         method: "POST",
         body: { idea_id: ideaId, project_id: projectId, style_variant: styleVariant, screen_type: screenType },
       }),
   component: (ideaId: number, projectId: number, componentType: string, styleVariant = "MODERN") =>
-    api<{ status: string; data: { html: string; component_name: string; style_variant: string } }>(
+    api<{ success: boolean; data: { html: string; component_name: string; style_variant: string } }>(
       "/api/mockup/component", {
         method: "POST",
         body: { idea_id: ideaId, project_id: projectId, component_type: componentType, style_variant: styleVariant },
@@ -288,17 +296,17 @@ export const mockupApi = {
 
 export const scoreApi = {
   scoreIdea: (idea: Record<string, unknown>, userProfile?: Record<string, unknown>, benchmarks?: Record<string, unknown>) =>
-    api<{ status: string; data: Record<string, unknown> }>("/api/score/idea", {
+    api<{ success: boolean; data: Record<string, unknown> }>("/api/score/idea", {
       method: "POST",
       body: { idea, user_profile: userProfile, benchmarks },
     }),
   scoreBatch: (ideas: Record<string, unknown>[], userProfile?: Record<string, unknown>) =>
-    api<{ status: string; data: Record<string, unknown>[] }>("/api/score/batch", {
+    api<{ success: boolean; data: Record<string, unknown>[] }>("/api/score/batch", {
       method: "POST",
       body: { ideas, user_profile: userProfile },
     }),
   benchmarks: (platform?: string) =>
-    api<{ status: string; data: Record<string, unknown> }>("/api/score/benchmarks", { params: { platform } }),
+    api<{ success: boolean; data: Record<string, unknown> }>("/api/score/benchmarks", { params: { platform } }),
 };
 
 export const ideaApi = {

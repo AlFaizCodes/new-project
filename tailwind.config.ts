@@ -9,6 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        "bg-base": "#EDEEF5",
+        "brand-green": "#9fff00",
         notionBg: "#f6f5f4",
         notionBorder: "#e6e6e6",
         notionBlue: "#0075de",
@@ -18,16 +20,8 @@ const config: Config = {
         stickerSky: "#62aef0",
       },
       fontFamily: {
-        sans: [
-          "Inter",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          '"Segoe UI"',
-          "Roboto",
-          "Helvetica",
-          "Arial",
-          "sans-serif",
-        ],
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", "Helvetica", "Arial", "sans-serif"],
+        display: ["Outfit", "Inter", "sans-serif"],
       },
     },
   },

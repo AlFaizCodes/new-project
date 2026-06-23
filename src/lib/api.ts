@@ -225,6 +225,44 @@ export const projectApi = {
   ideas: (projectId: number) => api<IdeaCard[]>(`/api/projects/${projectId}/ideas`),
 };
 
+export interface ArchaeologyResult {
+  code_analysis: string;
+  patterns: string;
+  evolution_timeline: string;
+  developer_psychology: string;
+  scores: Record<string, number>;
+  future_versions: string[];
+  detected_stack: Record<string, string[]>;
+  architecture_grade: string;
+}
+
+export const archaeologyApi = {
+  analyzeCode: (code: string) =>
+    api<{ status: string; data: ArchaeologyResult }>("/api/archaeology/code", {
+      method: "POST",
+      body: { code },
+    }),
+  analyzeGithub: (url: string) =>
+    api<{ status: string; data: ArchaeologyResult }>("/api/archaeology/github", {
+      method: "POST",
+      body: { url },
+    }),
+  analyzeWebsite: (url: string) =>
+    api<{ status: string; data: ArchaeologyResult }>("/api/archaeology/website", {
+      method: "POST",
+      body: { url },
+    }),
+};
+
+export const exportApi = {
+  blueprintMarkdown: (ideaId: number) =>
+    api<string>(`/api/export/blueprint/${ideaId}/markdown`),
+  blueprintJson: (ideaId: number) =>
+    api<{ status: string; data: Record<string, unknown> }>(`/api/export/blueprint/${ideaId}/json`),
+  mockupHtml: (ideaId: number) =>
+    api<string>(`/api/export/mockup/${ideaId}/html`),
+};
+
 export const ideaApi = {
   list: (params?: { source?: string; category?: string; skip?: number; limit?: number }) =>
     api<IdeaCard[]>("/api/ideas", { params: params as Record<string, string | number | undefined> }),

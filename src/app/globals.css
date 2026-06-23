@@ -3,14 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --background: #EDEEF5;
-  --foreground: #18181b;
-  --brand-green: #9fff00;
+  --background: #f6f5f4;
+  --foreground: #000000;
+  --primary: #0075de;
+  --primary-active: #005bab;
+  --secondary: #213183;
+  --on-primary: #ffffff;
+  --canvas: #ffffff;
+  --canvas-soft: #f6f5f4;
+  --surface: #ffffff;
+  --ink: #000000;
+  --ink-secondary: #31302e;
+  --ink-muted: #615d59;
+  --ink-faint: #a39e98;
+  --hairline: #e6e6e6;
+  
+  --accent-sky: #62aef0;
+  --accent-purple: #d6b6f6;
+  --accent-purple-deep: #391c57;
+  --accent-pink: #ff64c8;
+  --accent-orange: #dd5b00;
+  --accent-orange-deep: #793400;
+  --accent-teal: #2a9d99;
+  --accent-green: #1aae39;
+  --accent-brown: #523410;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: var(--canvas-soft);
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -26,7 +47,7 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #EDEEF5;
+  background: #f6f5f4;
 }
 ::-webkit-scrollbar-thumb {
   background: #c8c9d1;
@@ -34,4 +55,112 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a9b2;
+}
+
+/* Notion-style hairline borders and boxes */
+.notion-border {
+  border: 1px solid var(--hairline);
+}
+
+.notion-shadow {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.notion-shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.notion-shadow-lg {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05), 0 12px 24px rgba(0, 0, 0, 0.05);
+}
+
+/* Glassmorphism Input Styling */
+.notion-glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* R3F Canvas container styling */
+.canvas-container {
+  pointer-events: none;
+}
+
+.canvas-container canvas {
+  pointer-events: auto;
+}
+
+/* Custom React Flow styling to match the Notion premium aesthetic */
+.react-flow {
+  background-color: transparent !important;
+}
+
+.react-flow__node {
+  font-family: inherit;
+}
+
+.react-flow__node-default,
+.react-flow__node-input,
+.react-flow__node-output {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 6px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-flow__node-default:hover,
+.react-flow__node-input:hover,
+.react-flow__node-output:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 2px 8px rgba(0, 117, 222, 0.15) !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--primary) !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 4;
+  animation: flow-dash 30s linear infinite;
+}
+
+@keyframes flow-dash {
+  from {
+    stroke-dashoffset: 200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.react-flow__handle {
+  background: #ffffff !important;
+  border: 1.5px solid var(--primary) !important;
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.react-flow__controls {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+}
+
+.react-flow__controls-button {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  color: #000000 !important;
+  fill: #000000 !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #f6f5f4 !important;
 }

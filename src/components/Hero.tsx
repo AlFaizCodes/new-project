@@ -24,19 +24,19 @@ export function Hero() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="font-display text-[clamp(2.5rem,8vw,6rem)] leading-[1.05] tracking-[-0.03em] font-semibold"
+            className="font-sans text-[clamp(2.5rem,8vw,6rem)] leading-[1.05] tracking-[-0.03em] font-bold text-ink"
           >
-            <span className="text-[#1a1a1a]">Remix: Mentality offers</span>
+            <span className="text-ink">Remix: Mentality offers</span>
             <br />
-            <span className="text-[#8e8e8e]">information</span>
+            <span className="text-ink-secondary">information</span>
             <br />
-            <span className="text-[#8e8e8e]">and resources to help you manage</span>
+            <span className="text-ink-secondary">and resources to help you manage</span>
             <br />
-            <span className="text-[#8e8e8e]">
-              your{" "}
-              <span className="w-[16px] md:w-[42px] lg:w-[62px] border-[2px] border-[#1a1a1a] rounded-full inline-flex items-center justify-center align-middle mx-1 md:mx-2 relative" style={{ height: "1em", top: "-0.05em" }}>
-                <span className="w-2 h-2 bg-[#1a1a1a] rounded-full inline-block" />
-              </span>{" "}
+            <span className="text-ink-secondary">
+              your{' '}
+              <span className="w-[16px] md:w-[42px] lg:w-[62px] border-[2px] border-ink rounded-full inline-flex items-center justify-center align-middle mx-1 md:mx-2 relative" style={{ height: '1em', top: '-0.05em' }}>
+                <span className="w-2 h-2 bg-ink rounded-full inline-block" />
+              </span>{' '}
               mental wellbeing.
             </span>
           </motion.h1>
@@ -48,13 +48,13 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.15 }}
             className="mt-8 md:mt-10 max-w-md"
           >
-            <div className="bg-white rounded-[6px] border border-black/[0.05] p-1 pl-4 flex items-center shadow-sm">
+            <div className="bg-surface rounded-[6px] border border-hairline p-1 pl-4 flex items-center shadow-sm">
               <input
                 type="text"
                 placeholder="Ask me anything..."
-                className="bg-transparent border-none outline-none text-sm text-zinc-700 placeholder-zinc-400 w-full"
+                className="bg-transparent border-none outline-none text-sm text-ink placeholder-ink-muted w-full"
               />
-              <button className="bg-[#1a1a1a] text-white w-9 h-9 rounded-full flex items-center justify-center shrink-0 hover:bg-zinc-700 transition-colors">
+              <button className="bg-ink text-white w-9 h-9 rounded-full flex items-center justify-center shrink-0 hover:bg-ink-secondary transition-colors">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14" />
                   <path d="m12 5 7 7-7 7" />
@@ -72,13 +72,13 @@ export function Hero() {
           >
             <Link
               href="/register"
-              className="bg-[#1a1a1a] text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-zinc-800 transition-colors inline-flex items-center gap-1.5"
+              className="bg-notionBlue text-white hover:bg-[#0060b8] text-sm font-semibold px-5 py-2.5 rounded-full shadow-sm transition-all inline-flex items-center gap-1.5"
             >
               Start Free <span className="text-sm leading-none">→</span>
             </Link>
             <Link
               href="/login"
-              className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors px-4 py-2.5"
+              className="text-sm font-medium text-ink-secondary hover:text-ink transition-colors px-4 py-2.5"
             >
               Sign In
             </Link>
@@ -88,18 +88,18 @@ export function Hero() {
 
       {/* Edge Anchors */}
       <div className="hidden md:block absolute right-8 lg:right-12 top-1/2 -translate-y-1/2 z-10">
-        <div className="bg-white/70 backdrop-blur-md border border-zinc-200/60 rounded-full px-3 py-1.5 text-xs font-medium text-zinc-500 shadow-sm">
-          <span className="text-zinc-900">pl</span>
-          <span className="mx-1.5 text-zinc-300">—</span>
+        <div className="bg-surface/70 backdrop-blur-md border border-hairline rounded-full px-3 py-1.5 text-xs font-medium text-ink-secondary shadow-sm">
+          <span className="text-ink">pl</span>
+          <span className="mx-1.5 text-hairline">—</span>
           <span>en</span>
         </div>
       </div>
 
-      <div className="absolute bottom-6 left-8 md:left-12 z-10 text-xs text-zinc-400 font-medium">
+      <div className="absolute bottom-6 left-8 md:left-12 z-10 text-xs text-ink-muted font-medium">
         2024
       </div>
 
-      <div className="absolute bottom-6 right-8 md:right-12 z-10 text-xs text-zinc-400 font-medium">
+      <div className="absolute bottom-6 right-8 md:right-12 z-10 text-xs text-ink-muted font-medium">
         mental health tools
       </div>
     </section>

@@ -45,7 +45,7 @@ export function Footer() {
                 <path d="M2 12C2 12 6 10 8 10C10 10 12 11 12 12C12 13 10 14 8 14C6 14 2 12 2 12Z" fill="#1a1a1a"/>
                 <path d="M22 12C22 12 18 10 16 10C14 10 12 11 12 12C12 13 14 14 16 14C18 14 22 12 22 12Z" fill="#1a1a1a"/>
               </svg>
-              <span className="font-display text-base font-semibold text-[#1a1a1a]">mėntality</span>
+              <span className="font-semibold text-base text-[#1a1a1a]">mėntality</span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed max-w-xs">
               Information and resources to help you manage your mental wellbeing.

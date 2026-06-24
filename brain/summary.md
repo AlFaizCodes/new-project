@@ -91,9 +91,10 @@ AI-Powered Idea Evolution Platform. Next.js 14 + Python FastAPI + SQLite (dev) /
 - **schemas/__init__.py**: Updated to import correct schema classes
 - **response_model**: Removed from endpoints returning `{success: true}` dicts to avoid serialization mismatch
 
-### Config Fixes
+### Config & Type-safety Fixes
 - **tsconfig.json**: Changed `include` from `"**/*.ts", "**/*.tsx"` to `"./src/**/*.ts", "./src/**/*.tsx"` to exclude `pgsql/` directory
 - **Tailwind**: Added `bg-base: #EDEEF5`, `brand-green: #9fff00`, `font-display: Outfit`
+- **Framer Motion Types**: Added `as const` to cubic-bezier easing arrays in `Features.tsx` and `Hero.tsx` to fix TypeScript compilation failures during build
 
 ### API Response Alignment
 All endpoints changed from `{ status: "success", data }` to `{ success: true, data }` per Rules doc
@@ -110,8 +111,10 @@ All endpoints changed from `{ status: "success", data }` to `{ success: true, da
 - `tailwind.config.ts` — New colors/fonts
 - `src/app/globals.css` — #EDEEF5 bg, green selection
 - `src/app/layout.tsx` — Inter + Outfit fonts, selection classes
-- `src/app/page.tsx` — Simplified to just `<Hero />`
-- `src/components/Hero.tsx` — **New**: Video hero with animations
+- `src/app/page.tsx` — Added ThreeBackground, Hero, Features, and Stats sections
+- `src/components/Hero.tsx` — **New**: Video hero with animations and search pill
+- `src/components/Features.tsx` — **New**: Feature/Capability card grid
+- `src/components/Stats.tsx` — **New**: Animated counter statistics and quote section
 - `src/components/layout/Navbar.tsx` — **Rewritten**: Glassmorphic design
 - `src/components/layout/Footer.tsx` — **Rewritten**: 4-col useful links
 - `tsconfig.json` — Fixed include pattern

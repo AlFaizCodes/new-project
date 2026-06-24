@@ -33,6 +33,10 @@ const config: Config = {
         "accent-teal": "#2a9d99",
         "accent-green": "#1aae39",
         "accent-brown": "#523410",
+
+        // Brand & Base
+        "bg-base": "#EDEEF5",
+        "brand-green": "#9fff00",
         
         // Legacy Notion colors (for compatibility)
         notionBg: "#f6f5f4",
@@ -52,6 +56,11 @@ const config: Config = {
           "Roboto",
           "Helvetica",
           "Arial",
+          "sans-serif",
+        ],
+        display: [
+          "Outfit",
+          "Inter",
           "sans-serif",
         ],
       },
